@@ -1,0 +1,13 @@
+*.o
+*.shx
+*.csv
+*.shp
+*.sbx
+*.sbn
+*.prj
+*.dbf
+*.ain
+*.xml
+*.aih
+*.idx
+*.exe
