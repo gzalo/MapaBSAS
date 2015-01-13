@@ -51,14 +51,18 @@ class Data{
 		int load();
 		
 		vector <pair<int,int> > lineas;
-				
 		vector <pair<float,float> > puntos;
+		
+		vector <pair<int,int> > lineasManzanas;
+		vector <pair<float,float> > puntosManzanas;
+		
 		vector <int> alturas;
 		
 	private:
 	
 		int cargarUsoSuelo();
 		int cargarParcelas();
+		int cargarManzanas();
 		
 		map <string, int> pisos;
 };

@@ -30,7 +30,7 @@ int videoInit(int w, int h){
 	glViewport(0,0,w,h);
 	glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(60.0f, (float)w/(float)h, 0.1f, 22500.0f);
+    gluPerspective(60.0f, (float)w/(float)h, 1.0f, 11500.0f);
 	
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -40,7 +40,7 @@ int videoInit(int w, int h){
 	glDepthFunc(GL_LEQUAL);
 	glDisable(GL_CULL_FACE);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(0.2f, 0.6f, 0.8f, 1.0f);
 	
 	GLfloat fogColor[4] = {0.5f, 0.5f, 0.5f, 1.0f};
 	glFogi(GL_FOG_MODE, GL_LINEAR);

@@ -2,7 +2,7 @@ SOURCES=$(wildcard *.cpp)
 OBJECTS=$(addprefix bin/,$(addsuffix .o,$(notdir $(basename $(SOURCES)))))
 LDFLAGS= -lmingw32 -lsdlmain -lsdl -lglew32 -lopengl32 -lglu32
 
-G++FLAGS= -Wall -O2 -fpermissive -mno-ms-bitfields 
+G++FLAGS= -Wall -O2 -mno-ms-bitfields 
 
 all: mapabsas.exe
 

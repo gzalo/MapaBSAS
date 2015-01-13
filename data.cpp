@@ -145,10 +145,13 @@ int Data::cargarParcelas(){
 		transform(smp.begin(), smp.end(), smp.begin(), ::toupper);
 		
 		if(pisos.count(smp) == 0){
-			cerr << "SMP no encontrado: " << smp << endl;
+			cerr << "[SHP] SMP no encontrado: " << smp << endl;
 			alturas.push_back(-10);
 		}else{
-			alturas.push_back(pisos[smp]*3);
+			if(pisos[smp] == 0) 
+				alturas.push_back(-10);
+			else
+				alturas.push_back(pisos[smp]*6);
 		}			
 		cantPoligonos++;
 	}
@@ -164,9 +167,65 @@ int Data::cargarParcelas(){
 	return 0;
 }
 
+int Data::cargarManzanas(){
+	ifstream inSHP("res/manzanero_130212.shp", ios::binary);
+	if(!inSHP.is_open()){ cerr << "[SHP-MNZ] Imposible abrir archivo." << endl; return -1; }
+		
+	shpHeader headerSHP;
+	assert(sizeof(headerSHP) == 100);
+	inSHP.read((char*) &headerSHP, sizeof(headerSHP));
+	headerSHP.length = 2*endianSwap(headerSHP.length);
+	assert(headerSHP.code == 0x0a270000);
+
+	int cantPoligonos = 0;
+	
+	while(inSHP.peek() != EOF){
+	
+		int rNumber, rLength, rType;
+		inSHP.read((char*)&rNumber, 4);
+		inSHP.read((char*)&rLength, 4);
+		inSHP.read((char*)&rType, 4);
+		
+		rNumber = endianSwap(rNumber);
+		rLength = endianSwap(rLength)*2;
+		
+		if(rType != 5) {cerr << "[SHP-MNZ] Error, tipo no poligono." << endl; return -1;}
+		
+		double box[4];
+		int numParts, numPoints;
+		inSHP.read((char*)&box, 4*8);
+		inSHP.read((char*)&numParts, 4);
+		inSHP.read((char*)&numPoints, 4);
+				
+		if(numParts>32) {cerr << "[SHP-MNZ] Poligono con muchas partes." << endl; return -1;}
+		int parts[32];
+		inSHP.read((char*)&parts, numParts*4);
+		
+		if(numPoints>4096){cerr << "[SHP-MNZ] Poligono con muchos puntos." << endl; return -1;}
+		Point points[4096];
+		inSHP.read((char*)&points, numPoints*sizeof(Point));
+		
+		int maxPoints = numPoints;
+		lineasManzanas.push_back(make_pair(puntosManzanas.size(), maxPoints) );
+		
+		for(int i=0;i<maxPoints;i++){
+			puntosManzanas.push_back(make_pair(points[i].x-93844, 19200-(points[i].y-91726)));
+		}
+		
+		cantPoligonos++;
+	}
+	
+	inSHP.close();
+	
+	cout << "[SHP-MNZ] Cargados " << cantPoligonos << " poligonos." << endl;
+	
+	return 0;
+}
+
 int Data::load(){
 	if(cargarUsoSuelo() != 0) return -1;
 	if(cargarParcelas() != 0) return -1;	
+	if(cargarManzanas() != 0) return -1;	
 	return 0;
 }
 
