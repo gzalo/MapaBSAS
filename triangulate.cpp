@@ -102,7 +102,7 @@ bool Triangulate::Process(const Vector2dVector &contour,Vector2dVector &result)
     if (0 >= (count--))
     {
       //** Triangulate: ERROR - probable bad polygon!
-	  cerr << "[TRI] Mala triangulacion loop " << m << endl;
+	  //cerr << "[TRI] Mala triangulacion loop " << m << endl;
       return false;
     }
 

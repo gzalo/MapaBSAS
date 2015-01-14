@@ -145,7 +145,7 @@ int Data::cargarParcelas(){
 		transform(smp.begin(), smp.end(), smp.begin(), ::toupper);
 		
 		if(pisos.count(smp) == 0){
-			cerr << "[SHP] SMP no encontrado: " << smp << endl;
+			//cerr << "[SHP] SMP no encontrado: " << smp << endl;
 			alturas.push_back(-10);
 		}else{
 			if(pisos[smp] == 0) 
