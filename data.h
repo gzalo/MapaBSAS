@@ -44,25 +44,31 @@ struct dbfFileField{
 	unsigned char reserved[8];
 } __attribute__((packed));
 
+struct Poligono{
+	vector <Point> puntos;
+	int altura;
+};
+
 class Data{
 	public:
 		Data();
 		~Data();
 		int load();
 		
-		vector <pair<int,int> > lineas;
-		vector <pair<float,float> > puntos;
-		
-		vector <pair<int,int> > lineasManzanas;
-		vector <pair<float,float> > puntosManzanas;
-		
-		vector <int> alturas;
-		
+		vector <Poligono> parcelas;
+		vector <Poligono> manzanas;
+		vector <Poligono> verde;
+			
 	private:
-	
 		int cargarUsoSuelo();
 		int cargarParcelas();
-		int cargarManzanas();
+		int cargarSHP(vector <Poligono> *resultado, const string &filename);
+		
+		void agregarEstadisticaSM(const string &smp, int cantPisos);
+		float estimarCantidadPisosSM(const string &smp);
+		map <string, float> parcelaSumaPisos;
+		map <string, float> parcelaSumaPisosCuadrado;
+		map <string, int> parcelaCantidadPisos;
 		
 		map <string, int> pisos;
 };

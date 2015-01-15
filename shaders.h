@@ -6,7 +6,12 @@ typedef struct {
 	const char*  filename;
 	GLuint       shader;
 }ShaderInfo;
- 
-GLuint LoadShaders(ShaderInfo*);
+
+class Shader{
+	public:
+		static GLuint Load(ShaderInfo*);
+	private:
+		static const GLchar* Read(const char* filename);
+};
 
 #endif

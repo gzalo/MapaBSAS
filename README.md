@@ -7,15 +7,11 @@ Mapa 3D de Buenos Aires basado en los datos provistos por el gobierno.
 
 Mejorar expansion de poligonos para veredas (redondear bordes)
 
-Distintos colores para parques y otro tipo de edificios
-
 Implementar SSAO o algo similar para obtener mejor visualización
 
+Sistema TOD con sombras y reflejos en edificios altos
+
 Integrar con imágenes satelitales y/o imagenes del mapa
-
-Mejores formas para edificios o texturas
-
-Calcular correctamente la altura de algunas parcelas que no están en el censo (10% del total)
 
 
 

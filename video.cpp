@@ -1,10 +1,10 @@
 #include "video.h"
 #include "mapa.h"
 
-SDL_Window *videoInit(int w, int h){
+int Video::init(int w, int h){
 	if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
 		cerr << "Fallo inicializacion de SDL." << endl;
-		return NULL;
+		return -1;
 	}
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -17,11 +17,11 @@ SDL_Window *videoInit(int w, int h){
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-	SDL_Window *window =  SDL_CreateWindow("MapaBSAS", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+	window =  SDL_CreateWindow("MapaBSAS", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 	
 	if(window == NULL){
 		cerr << "Fallo creacion ventana OpenGL." << endl;
-		return NULL;
+		return -1;
 	}	
 	
 	SDL_GL_CreateContext(window);
@@ -29,7 +29,7 @@ SDL_Window *videoInit(int w, int h){
 	glewExperimental = true;
 	if(glewInit()){
 		cerr << "Fallo inicializacion de Glew." << endl;
-		return NULL;
+		return -1;
 	}	
 	
 	glGetError();
@@ -52,5 +52,27 @@ SDL_Window *videoInit(int w, int h){
 	if(err != 0)
 		std::cerr << "[VID] Error OpenGL en INIT " << err << std::endl; 
 		
-	return window;
+	projectionMatrix = glm::perspective(60.0f * (float)M_PI / 180.0f, (float)w / (float)h, 1.0f, 11500.0f);
+		
+	return 0;
+}
+
+int Video::post(){
+	SDL_GL_SwapWindow(window);
+	SDL_Delay(1);
+	
+	GLint err = glGetError();
+	if(err != 0)
+			std::cerr << "[VID] Error OpenGL en LOOP " << err << std::endl; 
+	
+	return 0;
+}
+
+int Video::setWindowTitle(const char *val){
+	SDL_SetWindowTitle(window,val);
+	return 0;
+}
+
+const GLfloat *Video::getProjectionMatrix(){
+	return glm::value_ptr(projectionMatrix);
 }

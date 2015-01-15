@@ -1,3 +1,0 @@
-[CSV] Analizadas 555685 lineas.
-[SHP] Cargados 318811 poligonos.
-[SHP-MNZ] Cargados 12373 poligonos.

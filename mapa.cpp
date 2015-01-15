@@ -7,54 +7,59 @@
 using namespace std;
 
 int main(int argc, char *args[]){
-	SDL_Window *window = videoInit(1024,768);
-	if(!window) return -1;
+	Video vid;
+	if(vid.init(1024,768)) return -1;
 
-	glm::mat4 projectionMatrix = glm::perspective(60.0f * (float)M_PI / 180.0f, 1024.0f / 768.0f, 1.0f, 11500.0f);
-	
 	Data data;
 	if(data.load() == -1) return -1;
 	
-	bool corre = true, first=true;
-	int kw=0, ks=0, ka=0, kd=0, kq=0, ke=0 , kr=0, kc=0;
+	bool corre=true, primerFrame=true;
+	int kw=0, ks=0, ka=0, kd=0, kq=0, ke=0, kr=0, kc=0;
 	float position[3] = {9600,64,9600};
 	float rot[2] = {0,0};
 	int oldMs = SDL_GetTicks(), frame=0;
 	
-	GLuint bufObjects[5];
-	glGenBuffers(5, bufObjects);
+	/**/
 	
-	GLuint vao[4];
-	glGenVertexArrays(4, vao);
-		
+	enum{
+		VAO_PAREDES = 0,
+		VAO_PISO,
+		VAO_TECHOS,
+		VAO_MANZANAS,
+		VAO_VERDE
+	};
+	GLuint vao[5];
+	glGenVertexArrays(5, vao);
+	
+	int vaoElements[5] = {0};
+	
+	enum{
+		VBO_PAREDES_VERTICES = 0,
+		VBO_PAREDES_INDICES,
+		VBO_PISO_VERTICES,
+		VBO_PISO_INDICES,
+		VBO_TECHOS_VERTICES,
+		VBO_MANZANAS_VERTICES,
+		VBO_VERDE_VERTICES
+	};
+	
+	GLuint vbo[7];
+	glGenBuffers(7, vbo);
+			
 	ShaderInfo shaders[] = {
         { GL_VERTEX_SHADER, "shr/common.vsh" },
         { GL_FRAGMENT_SHADER, "shr/common.fsh" },
         { GL_NONE, NULL }
     };
  
-	GLuint shaderProgram = LoadShaders(shaders);
+	GLuint shaderProgram = Shader::Load(shaders);
 	glUseProgram(shaderProgram);
 
 	GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
-	glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+	glUniformMatrix4fv(uniProj, 1, GL_FALSE, vid.getProjectionMatrix());
 	
-	vector <float> vertices;
-	vector <float> triangles;
-	vector <float> trianglesVereda;
-	
-	float verticesPiso[] = {
-		0,0,0,1,
-		1,0,0,0,
-		0,0,1,0,
-		-1,0,0,0,
-		0,0,-1,0,
-	};
-	
-	GLuint ordenPiso[] = {
-		0,1,2,0,3,4
-	};
-	
+	/**/
+		
 	while(corre){
 		SDL_Event event;
 		while(SDL_PollEvent(&event)){
@@ -122,68 +127,78 @@ int main(int argc, char *args[]){
 		GLint uniView = glGetUniformLocation(shaderProgram, "view");
 		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 			
-		if(first){
-			for(size_t i=0;i<data.lineas.size();i++){
-				int idx = data.lineas[i].first, len = data.lineas[i].second;
-				int h = data.alturas[i];
-								
-				for(int j=0;j<len-1;j++){
-					vertices.push_back(data.puntos[j+idx].first);
-					vertices.push_back(0);
-					vertices.push_back(data.puntos[j+idx].second);
-					
-					vertices.push_back(data.puntos[j+idx].first);
-					vertices.push_back(h);
-					vertices.push_back(data.puntos[j+idx].second);
-					
-					vertices.push_back(data.puntos[j+idx+1].first);
-					vertices.push_back(h);
-					vertices.push_back(data.puntos[j+idx+1].second);
-					
-					//-
-					
-					vertices.push_back(data.puntos[j+idx+1].first);
-					vertices.push_back(h);
-					vertices.push_back(data.puntos[j+idx+1].second);
-					
-					vertices.push_back(data.puntos[j+idx+1].first);
-					vertices.push_back(0);
-					vertices.push_back(data.puntos[j+idx+1].second);		
-					
-					vertices.push_back(data.puntos[j+idx].first);
-					vertices.push_back(0);
-					vertices.push_back(data.puntos[j+idx].second);
-				}
-			}
-			glBindVertexArray(vao[0]);
-			glBindBuffer(GL_ARRAY_BUFFER, bufObjects[0]);
-			glBufferData(GL_ARRAY_BUFFER, vertices.size()*4, (void*)&vertices[0], GL_STATIC_DRAW);
+		if(primerFrame){
 			
+			vector <float> vertices;
+			vector <GLuint> ordenParedes;
+
+			//Paredes
+			int verticesMetidos = 0;
+			for(size_t i=0;i<data.parcelas.size();i++){
+			
+				int verticeOriginal = verticesMetidos;
+				for(size_t j=0;j<data.parcelas[i].puntos.size();j++){
+					Point p = data.parcelas[i].puntos[j];
+					
+					vertices.push_back(p.x);
+					vertices.push_back(0);
+					vertices.push_back(p.y);
+					
+					vertices.push_back(p.x);
+					vertices.push_back(data.parcelas[i].altura);
+					vertices.push_back(p.y);
+					
+					if(j != data.parcelas[i].puntos.size()-1){
+						ordenParedes.push_back(verticesMetidos);
+						ordenParedes.push_back(verticesMetidos+1);
+						ordenParedes.push_back(verticesMetidos+2);
+						ordenParedes.push_back(verticesMetidos+2);
+						ordenParedes.push_back(verticesMetidos+1);
+						ordenParedes.push_back(verticesMetidos+3);
+					}else{
+						ordenParedes.push_back(verticesMetidos);
+						ordenParedes.push_back(verticesMetidos+1);
+						ordenParedes.push_back(verticeOriginal);
+						ordenParedes.push_back(verticeOriginal);
+						ordenParedes.push_back(verticesMetidos+1);
+						ordenParedes.push_back(verticeOriginal+1);
+					}
+					verticesMetidos += 2;
+				}
+				//0 1 2 
+				//2 1 3
+			}
+			glBindVertexArray(vao[VAO_PAREDES]);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[VBO_PAREDES_VERTICES]);
+			glBufferData(GL_ARRAY_BUFFER, vertices.size()*4, (void*)&vertices[0], GL_STATIC_DRAW);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[VBO_PAREDES_INDICES]);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ordenParedes.size()*4, (void*)&ordenParedes[0], GL_STATIC_DRAW);
 			
 			GLint posAttrib = glGetAttribLocation(shaderProgram, "pos");
 			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 			glEnableVertexAttribArray(posAttrib);
 			
-			for(size_t i=0;i<data.lineas.size();i++){
+			vaoElements[VAO_PAREDES] = ordenParedes.size();
+			
+			//Techos
+						
+			vector <float> triangles;
+			for(size_t i=0;i<data.parcelas.size();i++){
 				Vector2dVector poligono, resultado;
-				int idx = data.lineas[i].first, len = data.lineas[i].second;
-				int h = data.alturas[i];
 				
-				for(int j=0;j<len-1;j++){
-					poligono.push_back((Point){data.puntos[j+idx].first,data.puntos[j+idx].second});
-				}
+				poligono = data.parcelas[i].puntos;
 				
 				Triangulate::Process(poligono,resultado);
 				
 				for(size_t j=0;j<resultado.size();j++){
 					triangles.push_back(resultado[j].x);
-					triangles.push_back(h);
+					triangles.push_back(data.parcelas[i].altura);
 					triangles.push_back(resultado[j].y);
 				}
 			}
 			
-			glBindVertexArray(vao[1]);
-			glBindBuffer(GL_ARRAY_BUFFER, bufObjects[1]);
+			glBindVertexArray(vao[VAO_TECHOS]);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[VBO_TECHOS_VERTICES]);
 			glBufferData(GL_ARRAY_BUFFER, triangles.size()*4, (void*)&triangles[0], GL_STATIC_DRAW);
 			
 			
@@ -191,15 +206,15 @@ int main(int argc, char *args[]){
 			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 			glEnableVertexAttribArray(posAttrib);
 			
+			vaoElements[VAO_TECHOS] = triangles.size()/3;
+			
 			//Manzanas
-			for(size_t i=0;i<data.lineasManzanas.size();i++){
+			vector <float> trianglesVereda;
+			for(size_t i=0;i<data.manzanas.size();i++){
 				Vector2dVector poligono, resultadoExpandido, resultadoFinal;
-				int idx = data.lineasManzanas[i].first, len = data.lineasManzanas[i].second;
 				
-				for(int j=0;j<len-1;j++){
-					poligono.push_back((Point){data.puntosManzanas[j+idx].first,data.puntosManzanas[j+idx].second});
-				}
-				
+				poligono = data.manzanas[i].puntos;
+							
 				Expand::Process(poligono, resultadoExpandido, 1.06);
 				
 				Triangulate::Process(resultadoExpandido, resultadoFinal);
@@ -211,64 +226,101 @@ int main(int argc, char *args[]){
 				}
 			}
 			
-			glBindVertexArray(vao[2]);
-			glBindBuffer(GL_ARRAY_BUFFER, bufObjects[2]);
+			glBindVertexArray(vao[VAO_MANZANAS]);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[VBO_MANZANAS_VERTICES]);
 			glBufferData(GL_ARRAY_BUFFER, trianglesVereda.size()*4, (void*)&trianglesVereda[0], GL_STATIC_DRAW);
 
 			posAttrib = glGetAttribLocation(shaderProgram, "pos");
 			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 			glEnableVertexAttribArray(posAttrib);
 						
+			vaoElements[VAO_MANZANAS] = trianglesVereda.size()/3;
+						
+			//Verde
+			vector <float> trianglesVerdes;
+			for(size_t i=0;i<data.verde.size();i++){
+				Vector2dVector poligono, resultadoFinal;
+				
+				poligono = data.verde[i].puntos;
+							
+				Triangulate::Process(poligono, resultadoFinal);
+				
+				for(size_t j=0;j<resultadoFinal.size();j++){
+					trianglesVerdes.push_back(resultadoFinal[j].x);
+					trianglesVerdes.push_back(100);
+					trianglesVerdes.push_back(resultadoFinal[j].y);
+				}
+			}
+			
+			glBindVertexArray(vao[VAO_VERDE]);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[VBO_VERDE_VERTICES]);
+			glBufferData(GL_ARRAY_BUFFER, trianglesVerdes.size()*4, (void*)&trianglesVerdes[0], GL_STATIC_DRAW);
+
+			posAttrib = glGetAttribLocation(shaderProgram, "pos");
+			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(posAttrib);
+			
+			vaoElements[VAO_VERDE] = trianglesVerdes.size()/3;
 						
 			//PISO
-			glBindVertexArray(vao[3]);
+			float verticesPiso[] = {
+				0,0,0,1,
+				1,0,0,0,
+				0,0,1,0,
+				-1,0,0,0,
+				0,0,-1,0,
+			};
 			
-			glBindBuffer(GL_ARRAY_BUFFER, bufObjects[3]);
+			GLuint ordenPiso[] = {
+				0,1,2,0,3,4
+			};
+			
+			glBindVertexArray(vao[VAO_PISO]);
+			
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[VBO_PISO_VERTICES]);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(verticesPiso), (void*)&verticesPiso[0], GL_STATIC_DRAW);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufObjects[4]);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[VBO_PISO_INDICES]);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ordenPiso), (void*)&ordenPiso[0], GL_STATIC_DRAW);
 			posAttrib = glGetAttribLocation(shaderProgram, "pos");
 			glVertexAttribPointer(posAttrib, 4, GL_FLOAT, GL_FALSE, 0, 0);
 			glEnableVertexAttribArray(posAttrib);
+			
+			vaoElements[VAO_PISO] = 6;
 						
-			first=false;
+			primerFrame=false;
 		}
 		
 		
 		GLint uniColor = glGetUniformLocation(shaderProgram, "drawColor");
 		
 		//Piso
-		
 		glDepthMask(GL_FALSE);
-		
 		glProgramUniform4f(shaderProgram, uniColor, 0.2f,0.2f,0.2f,1.0f);
-		glBindVertexArray(vao[3]);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		
+		glBindVertexArray(vao[VAO_PISO]);
+		glDrawElements(GL_TRIANGLES, vaoElements[VAO_PISO], GL_UNSIGNED_INT, 0);
 		glDepthMask(GL_TRUE);
 		
 		//Paredes
 		glProgramUniform4f(shaderProgram, uniColor, 0.6f,0.6f,0.6f,1.0f);
-		glBindVertexArray(vao[0]);
-		glDrawArrays(GL_TRIANGLES, 0, vertices.size()/3);
+		glBindVertexArray(vao[VAO_PAREDES]);
+		glDrawElements(GL_TRIANGLES, vaoElements[VAO_PAREDES], GL_UNSIGNED_INT, 0);
 
 		//Techos		
 		glProgramUniform4f(shaderProgram, uniColor, 0.8f,0.8f,0.8f,1.0f);
-		glBindVertexArray(vao[1]);
-		glDrawArrays(GL_TRIANGLES, 0, triangles.size()/3);
+		glBindVertexArray(vao[VAO_TECHOS]);
+		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_TECHOS]);
 
 		//Veredas
 		glProgramUniform4f(shaderProgram, uniColor, 0.5f,0.5f,0.5f,1.0f);
-		glBindVertexArray(vao[2]);
-		glDrawArrays(GL_TRIANGLES, 0, trianglesVereda.size()/3);
-
-		GLint err = glGetError();
-		if(err != 0)
-			std::cerr << "[VID] Error OpenGL en LOOP " << err << std::endl; 
+		glBindVertexArray(vao[VAO_MANZANAS]);
+		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_MANZANAS]);
 		
+		//Verde
+		glProgramUniform4f(shaderProgram, uniColor, 0.13f,0.55f,0.13f,1.0f);
+		glBindVertexArray(vao[VAO_VERDE]);
+		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_VERDE]);
 		
-		SDL_GL_SwapWindow(window);
-		SDL_Delay(1);
+		vid.post();
 		
 		frame++;
 		if(frame==30){
@@ -279,7 +331,7 @@ int main(int argc, char *args[]){
 			oldMs = SDL_GetTicks();
 			char bf[64];
 			sprintf(bf, "%.2f FPS - %.2f %.2f %.2f", 30000.0f/(float)dt, position[0], position[1], position[2]);
-			SDL_SetWindowTitle(window, bf);
+			vid.setWindowTitle(bf);
 		}
 	}
 	SDL_Quit();

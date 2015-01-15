@@ -5,7 +5,7 @@
 #include "mapa.h"
 #include "shaders.h"
  
-static const GLchar* ReadShader(const char* filename){
+const GLchar* Shader::Read(const char* filename){
 	FILE* infile = fopen( filename, "rb" );
 
 	if ( !infile ) {
@@ -27,7 +27,7 @@ static const GLchar* ReadShader(const char* filename){
 	return const_cast<const GLchar*>(source);
 }
  
-GLuint LoadShaders( ShaderInfo* shaders ){
+GLuint Shader::Load( ShaderInfo* shaders ){
     if ( shaders == NULL ) { return 0; }
  
     GLuint program = glCreateProgram();
@@ -38,7 +38,7 @@ GLuint LoadShaders( ShaderInfo* shaders ){
  
         entry->shader = shader;
  
-        const GLchar* source = ReadShader( entry->filename );
+        const GLchar* source = Read( entry->filename );
         if ( source == NULL ) {
             for ( entry = shaders; entry->type != GL_NONE; ++entry ) {
                 glDeleteShader( entry->shader );
