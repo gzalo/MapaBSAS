@@ -47,6 +47,7 @@ struct dbfFileField{
 struct Poligono{
 	vector <Point> puntos;
 	int altura;
+	int cantPisos;
 };
 
 class Data{

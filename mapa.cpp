@@ -26,12 +26,13 @@ int main(int argc, char *args[]){
 		VAO_PISO,
 		VAO_TECHOS,
 		VAO_MANZANAS,
-		VAO_VERDE
+		VAO_VERDE,
+		VAO_FSQUAD
 	};
-	GLuint vao[5];
-	glGenVertexArrays(5, vao);
+	GLuint vao[6];
+	glGenVertexArrays(6, vao);
 	
-	int vaoElements[5] = {0};
+	int vaoElements[6] = {0};
 	
 	enum{
 		VBO_PAREDES_VERTICES = 0,
@@ -40,12 +41,56 @@ int main(int argc, char *args[]){
 		VBO_PISO_INDICES,
 		VBO_TECHOS_VERTICES,
 		VBO_MANZANAS_VERTICES,
-		VBO_VERDE_VERTICES
+		VBO_VERDE_VERTICES,
+		VBO_FSQUAD_VERTICES
 	};
 	
-	GLuint vbo[7];
-	glGenBuffers(7, vbo);
+	GLuint vbo[8];
+	glGenBuffers(8, vbo);
 			
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);  
+
+	
+	GLuint textures[2];
+	glGenTextures(2, textures);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	  
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 768, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
+	
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textures[0], 0);  
+
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
+	  
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1024, 768, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  
+	
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, textures[1], 0);  
+
+
+	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		cout << "FB no completo!" << endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+
+
+	ShaderInfo shadersPost[] = {
+        { GL_VERTEX_SHADER, "shr/post.vsh" },
+        { GL_FRAGMENT_SHADER, "shr/post.fsh" },
+        { GL_NONE, NULL }
+    };
+ 
+	GLuint shaderProgramPost = Shader::Load(shadersPost);
+	glUseProgram(shaderProgramPost);	
+
+	GLint tex0 = glGetUniformLocation(shaderProgramPost, "colorTexture");
+	glUniform1i(tex0, 0);
+	GLint tex1 = glGetUniformLocation(shaderProgramPost, "depthTexture");
+	glUniform1i(tex1, 1);
+	
 	ShaderInfo shaders[] = {
         { GL_VERTEX_SHADER, "shr/common.vsh" },
         { GL_FRAGMENT_SHADER, "shr/common.fsh" },
@@ -54,9 +99,11 @@ int main(int argc, char *args[]){
  
 	GLuint shaderProgram = Shader::Load(shaders);
 	glUseProgram(shaderProgram);
-
+	
 	GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, vid.getProjectionMatrix());
+
+
 	
 	/**/
 		
@@ -117,6 +164,10 @@ int main(int argc, char *args[]){
 			position[2] -= hsp * sin(rotationF);
 		}
 		
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glUseProgram(shaderProgram);
+				
+		glClearColor(0.2f, 0.6f, 0.8f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		glm::mat4 viewMatrix = glm::mat4();
@@ -131,7 +182,7 @@ int main(int argc, char *args[]){
 			
 			vector <float> vertices;
 			vector <GLuint> ordenParedes;
-
+			
 			//Paredes
 			int verticesMetidos = 0;
 			for(size_t i=0;i<data.parcelas.size();i++){
@@ -143,11 +194,13 @@ int main(int argc, char *args[]){
 					vertices.push_back(p.x);
 					vertices.push_back(0);
 					vertices.push_back(p.y);
+					vertices.push_back(0);
 					
 					vertices.push_back(p.x);
 					vertices.push_back(data.parcelas[i].altura);
 					vertices.push_back(p.y);
-					
+					vertices.push_back(data.parcelas[i].cantPisos);
+										
 					if(j != data.parcelas[i].puntos.size()-1){
 						ordenParedes.push_back(verticesMetidos);
 						ordenParedes.push_back(verticesMetidos+1);
@@ -175,8 +228,12 @@ int main(int argc, char *args[]){
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ordenParedes.size()*4, (void*)&ordenParedes[0], GL_STATIC_DRAW);
 			
 			GLint posAttrib = glGetAttribLocation(shaderProgram, "pos");
-			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 4*sizeof(float), 0);
 			glEnableVertexAttribArray(posAttrib);
+			
+			GLint pisoAttrib = glGetAttribLocation(shaderProgram, "piso");
+			glVertexAttribPointer(pisoAttrib, 1, GL_FLOAT, GL_FALSE, 4*sizeof(float), (void*)(3*sizeof(float)));
+			glEnableVertexAttribArray(pisoAttrib);
 			
 			vaoElements[VAO_PAREDES] = ordenParedes.size();
 			
@@ -286,11 +343,32 @@ int main(int argc, char *args[]){
 			glEnableVertexAttribArray(posAttrib);
 			
 			vaoElements[VAO_PISO] = 6;
+			
+			//FSQUAD
+			float verticesFS[] = {
+				-1,-1,
+				1,-1,
+				-1,1,
+				1,-1,
+				-1,1,
+				1,1
+			};
+
+			
+			glBindVertexArray(vao[VAO_FSQUAD]);
+			
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[VBO_FSQUAD_VERTICES]);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(verticesFS), (void*)&verticesFS[0], GL_STATIC_DRAW);
+			posAttrib = glGetAttribLocation(shaderProgramPost, "pos");
+			glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(posAttrib);
+			
+			vaoElements[VAO_FSQUAD] = 6;
 						
 			primerFrame=false;
 		}
 		
-		
+		glUseProgram(shaderProgram);
 		GLint uniColor = glGetUniformLocation(shaderProgram, "drawColor");
 		
 		//Piso
@@ -319,6 +397,23 @@ int main(int argc, char *args[]){
 		glProgramUniform4f(shaderProgram, uniColor, 0.13f,0.55f,0.13f,1.0f);
 		glBindVertexArray(vao[VAO_VERDE]);
 		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_VERDE]);
+		
+		//Post
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glUseProgram(shaderProgramPost);
+
+		glActiveTexture(GL_TEXTURE0 + 0);
+		glBindTexture(GL_TEXTURE_2D, textures[0]);
+		glActiveTexture(GL_TEXTURE0 + 1);
+		glBindTexture(GL_TEXTURE_2D, textures[1]);
+		
+		glDisable(GL_DEPTH_TEST);
+		glBindVertexArray(vao[VAO_FSQUAD]);
+		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_FSQUAD]);
+		glEnable(GL_DEPTH_TEST);
+
 		
 		vid.post();
 		

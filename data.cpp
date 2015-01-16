@@ -200,13 +200,15 @@ int Data::cargarParcelas(){
 		
 		if(pisos.count(smp) == 0){
 			smpInterpolado++;
-			poly.altura = estimarCantidadPisosSM(smp)*altoPisos(de);
+			poly.cantPisos = estimarCantidadPisosSM(smp);
+			poly.altura = poly.cantPisos*altoPisos(de);
 		}else{
 			if(pisos[smp] == 0){
 				pisos[smp] = 1;
 				//Suelen ser estacionamientos
 			}
-			poly.altura = pisos[smp]*altoPisos(de);
+			poly.cantPisos = pisos[smp];
+			poly.altura = poly.cantPisos*altoPisos(de);
 		}			
 		parcelas.push_back(poly);
 	}

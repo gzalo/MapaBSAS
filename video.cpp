@@ -7,8 +7,8 @@ int Video::init(int w, int h){
 		return -1;
 	}
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+	/*SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);*/
 	
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -33,8 +33,7 @@ int Video::init(int w, int h){
 	}	
 	
 	glGetError();
-		
-	glClearColor(0.2f, 0.6f, 0.8f, 1.0f);
+
 	SDL_GL_SetSwapInterval(0);	
 	
 	SDL_WarpMouseInWindow(window, w/2,h/2);
