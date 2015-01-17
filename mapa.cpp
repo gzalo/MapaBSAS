@@ -55,19 +55,19 @@ int main(int argc, char *args[]){
 	
 	GLuint textures[2];
 	glGenTextures(2, textures);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE , textures[0]);
 	  
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 768, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, 1024, 768, GL_FALSE);
+	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE , GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE , GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
 	
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textures[0], 0);  
 
-	glBindTexture(GL_TEXTURE_2D, textures[1]);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE , textures[1]);
 	  
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1024, 768, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);  
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_DEPTH_COMPONENT, 1024, 768, GL_FALSE);
+	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE , GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE , GL_TEXTURE_MAG_FILTER, GL_NEAREST);  
 	
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, textures[1], 0);  
 
@@ -405,9 +405,9 @@ int main(int argc, char *args[]){
 		glUseProgram(shaderProgramPost);
 
 		glActiveTexture(GL_TEXTURE0 + 0);
-		glBindTexture(GL_TEXTURE_2D, textures[0]);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textures[0]);
 		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, textures[1]);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textures[1]);
 		
 		glDisable(GL_DEPTH_TEST);
 		glBindVertexArray(vao[VAO_FSQUAD]);
