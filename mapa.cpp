@@ -52,6 +52,9 @@ int main(int argc, char *args[]){
 	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);  
 
+	GLuint piso = cargarTextura("tex/piso.png");
+	if(!piso)
+		return -1;
 	
 	GLuint textures[2];
 	glGenTextures(2, textures);
@@ -375,6 +378,10 @@ int main(int argc, char *args[]){
 		glDepthMask(GL_FALSE);
 		glProgramUniform4f(shaderProgram, uniColor, 0.2f,0.2f,0.2f,1.0f);
 		glBindVertexArray(vao[VAO_PISO]);
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, piso);
+		
 		glDrawElements(GL_TRIANGLES, vaoElements[VAO_PISO], GL_UNSIGNED_INT, 0);
 		glDepthMask(GL_TRUE);
 		

@@ -96,4 +96,24 @@ GLuint Shader::Load( ShaderInfo* shaders ){
     return program;
 }
 
+GLuint cargarTextura(const char *nombre){
+	SDL_Surface *img = IMG_Load(nombre);
+	if(img == NULL){
+		std::cerr << "Error cargando imagen " << SDL_GetError() << std::endl;
+		return -1;
+	}
+			
+	GLuint imgId;
+	glGenTextures(1, &imgId);
+	glBindTexture(GL_TEXTURE_2D, imgId);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D,	0, GL_RGB, img->w, img->h, 0, GL_RGB, GL_UNSIGNED_BYTE, img->pixels);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	SDL_FreeSurface(img);
+	
+	return imgId;
+}
  

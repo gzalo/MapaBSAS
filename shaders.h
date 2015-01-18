@@ -1,6 +1,9 @@
 #ifndef SHADERS_H
 #define SHADERS_H
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
 typedef struct {
 	GLenum       type;
 	const char*  filename;
@@ -13,5 +16,6 @@ class Shader{
 	private:
 		static const GLchar* Read(const char* filename);
 };
+GLuint cargarTextura(const char *nombre);
 
 #endif
