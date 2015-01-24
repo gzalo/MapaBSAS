@@ -12,6 +12,6 @@ void main(){
 	//color = mix(drawColor, vec4(0.0,0.0,0.0,1.0), ancho);
 	
 	//color = vec4(fract(texCoord), 0.0, 1.0);
-	color = texture2D(albedoTexture,fract(texCoord*0.1));
+	color = texture2D(albedoTexture,texCoord*0.1);
 
 }

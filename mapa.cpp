@@ -6,6 +6,10 @@
 #include "shaders.h"
 using namespace std;
 
+const float PISO_SCALE = 10000.0f;
+const float MANZ_SCALE = 10.0f;
+const float TECHO_SCALE = 2.0f;
+
 int main(int argc, char *args[]){
 	Video vid;
 	if(vid.init(1024,768)) return -1;
@@ -52,9 +56,17 @@ int main(int argc, char *args[]){
 	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);  
 
-	GLuint piso = cargarTextura("tex/piso.png");
+	GLuint piso = cargarTextura("tex/asfalto.png");
 	if(!piso)
 		return -1;
+		
+	GLuint manzTex = cargarTextura("tex/piso.png");
+	if(!manzTex)
+		return -1;	
+	
+	GLuint techoTex = cargarTextura("tex/techo_0.png");
+	if(!techoTex)
+		return -1;		
 	
 	GLuint textures[2];
 	glGenTextures(2, textures);
@@ -186,6 +198,8 @@ int main(int argc, char *args[]){
 			vector <float> vertices;
 			vector <GLuint> ordenParedes;
 			
+			float minX = 0, minY = 0, maxX = 0, maxY = 0;
+			
 			//Paredes
 			int verticesMetidos = 0;
 			for(size_t i=0;i<data.parcelas.size();i++){
@@ -193,6 +207,12 @@ int main(int argc, char *args[]){
 				int verticeOriginal = verticesMetidos;
 				for(size_t j=0;j<data.parcelas[i].puntos.size();j++){
 					Point p = data.parcelas[i].puntos[j];
+					
+					if(p.x < minX) minX = p.x;
+					if(p.y < minY) minY = p.y;
+					
+					if(p.x > maxX) maxX = p.x;
+					if(p.y > maxY) maxY = p.y;
 					
 					vertices.push_back(p.x);
 					vertices.push_back(0);
@@ -224,6 +244,9 @@ int main(int argc, char *args[]){
 				//0 1 2 
 				//2 1 3
 			}
+			
+			cout << "[MAP] Bordes: " << minX << ":" << maxX << " " << minY << ":" << maxY << endl;
+			
 			glBindVertexArray(vao[VAO_PAREDES]);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo[VBO_PAREDES_VERTICES]);
 			glBufferData(GL_ARRAY_BUFFER, vertices.size()*4, (void*)&vertices[0], GL_STATIC_DRAW);
@@ -248,12 +271,20 @@ int main(int argc, char *args[]){
 				
 				poligono = data.parcelas[i].puntos;
 				
+				if(poligono.size() != 4) continue;	
+				
 				Triangulate::Process(poligono,resultado);
+				
+				float vU[] = {0,0,1,1,1,0};
+				float vV[] = {0,1,1,1,0,0};
 				
 				for(size_t j=0;j<resultado.size();j++){
 					triangles.push_back(resultado[j].x);
 					triangles.push_back(data.parcelas[i].altura);
 					triangles.push_back(resultado[j].y);
+					
+					triangles.push_back(vU[j] * 20.0f);
+					triangles.push_back(vV[j] * 20.0f);
 				}
 			}
 			
@@ -261,10 +292,16 @@ int main(int argc, char *args[]){
 			glBindBuffer(GL_ARRAY_BUFFER, vbo[VBO_TECHOS_VERTICES]);
 			glBufferData(GL_ARRAY_BUFFER, triangles.size()*4, (void*)&triangles[0], GL_STATIC_DRAW);
 			
+			{
+				GLint posAttrib = glGetAttribLocation(shaderProgram, "pos");
+				glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
+				glEnableVertexAttribArray(posAttrib);
+				
+				GLint manzTexAttrib = glGetAttribLocation(shaderProgram, "textureCoord");
+				glVertexAttribPointer(manzTexAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+				glEnableVertexAttribArray(manzTexAttrib);
+			}
 			
-			posAttrib = glGetAttribLocation(shaderProgram, "pos");
-			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
-			glEnableVertexAttribArray(posAttrib);
 			
 			vaoElements[VAO_TECHOS] = triangles.size()/3;
 			
@@ -283,6 +320,9 @@ int main(int argc, char *args[]){
 					trianglesVereda.push_back(resultadoFinal[j].x);
 					trianglesVereda.push_back(1);
 					trianglesVereda.push_back(resultadoFinal[j].y);
+					
+					trianglesVereda.push_back(resultadoFinal[j].x * MANZ_SCALE);
+					trianglesVereda.push_back(resultadoFinal[j].y * MANZ_SCALE);
 				}
 			}
 			
@@ -291,8 +331,12 @@ int main(int argc, char *args[]){
 			glBufferData(GL_ARRAY_BUFFER, trianglesVereda.size()*4, (void*)&trianglesVereda[0], GL_STATIC_DRAW);
 
 			posAttrib = glGetAttribLocation(shaderProgram, "pos");
-			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
 			glEnableVertexAttribArray(posAttrib);
+			
+			GLint manzTexAttrib = glGetAttribLocation(shaderProgram, "textureCoord");
+			glVertexAttribPointer(manzTexAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+			glEnableVertexAttribArray(manzTexAttrib);	
 						
 			vaoElements[VAO_MANZANAS] = trianglesVereda.size()/3;
 						
@@ -324,15 +368,14 @@ int main(int argc, char *args[]){
 						
 			//PISO
 			float verticesPiso[] = {
-				0,0,0,1,
-				1,0,0,0,
-				0,0,1,0,
-				-1,0,0,0,
-				0,0,-1,0,
+				minX, 0, minY, 0,0,
+				maxX, 0, minY, PISO_SCALE,0,
+				minX, 0, maxY, 0,PISO_SCALE,
+				maxX, 0, maxY, PISO_SCALE,PISO_SCALE
 			};
 			
 			GLuint ordenPiso[] = {
-				0,1,2,0,3,4
+				0,1,2,1,3,2
 			};
 			
 			glBindVertexArray(vao[VAO_PISO]);
@@ -341,8 +384,13 @@ int main(int argc, char *args[]){
 			glBufferData(GL_ARRAY_BUFFER, sizeof(verticesPiso), (void*)&verticesPiso[0], GL_STATIC_DRAW);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[VBO_PISO_INDICES]);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ordenPiso), (void*)&ordenPiso[0], GL_STATIC_DRAW);
+			
+			GLint texAttrib = glGetAttribLocation(shaderProgram, "textureCoord");
+			glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
+			glEnableVertexAttribArray(texAttrib);
+			
 			posAttrib = glGetAttribLocation(shaderProgram, "pos");
-			glVertexAttribPointer(posAttrib, 4, GL_FLOAT, GL_FALSE, 0, 0);
+			glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
 			glEnableVertexAttribArray(posAttrib);
 			
 			vaoElements[VAO_PISO] = 6;
@@ -386,21 +434,27 @@ int main(int argc, char *args[]){
 		glDepthMask(GL_TRUE);
 		
 		//Paredes
+		
+		glBindTexture(GL_TEXTURE_2D, 0);
+		
 		glProgramUniform4f(shaderProgram, uniColor, 0.6f,0.6f,0.6f,1.0f);
 		glBindVertexArray(vao[VAO_PAREDES]);
 		glDrawElements(GL_TRIANGLES, vaoElements[VAO_PAREDES], GL_UNSIGNED_INT, 0);
 
 		//Techos		
+		glBindTexture(GL_TEXTURE_2D, techoTex);
 		glProgramUniform4f(shaderProgram, uniColor, 0.8f,0.8f,0.8f,1.0f);
 		glBindVertexArray(vao[VAO_TECHOS]);
 		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_TECHOS]);
 
 		//Veredas
+		glBindTexture(GL_TEXTURE_2D, manzTex);
 		glProgramUniform4f(shaderProgram, uniColor, 0.5f,0.5f,0.5f,1.0f);
 		glBindVertexArray(vao[VAO_MANZANAS]);
 		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_MANZANAS]);
 		
 		//Verde
+		glBindTexture(GL_TEXTURE_2D, 0);
 		glProgramUniform4f(shaderProgram, uniColor, 0.13f,0.55f,0.13f,1.0f);
 		glBindVertexArray(vao[VAO_VERDE]);
 		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_VERDE]);

@@ -11,6 +11,6 @@ out vec2 texCoord;
 
 void main(){
 	piso_out = piso;
-	texCoord = pos.xz;
+	texCoord = textureCoord;
     gl_Position = proj * view * pos;
 }
