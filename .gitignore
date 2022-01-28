@@ -13,3 +13,6 @@
 *.exe
 stderr.txt
 stderr.txt
+.idea/
+cmake-build-debug/
+out.txt

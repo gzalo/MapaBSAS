@@ -1,4 +1,4 @@
-#version 150
+#version 130
 
 out vec4 color;
 uniform vec4 drawColor;

@@ -25,14 +25,13 @@ int Video::init(int w, int h){
 	}	
 	
 	SDL_GL_CreateContext(window);
-	
-	glewExperimental = true;
-	if(glewInit()){
-		cerr << "Fallo inicializacion de Glew." << endl;
-		return -1;
-	}	
-	
-	glGetError();
+
+    if (gl3wInit()) {
+        cerr << "failed to initialize OpenGL." << endl;
+        return -1;
+    }
+
+    glGetError();
 
 	SDL_GL_SetSwapInterval(0);	
 	
@@ -58,7 +57,7 @@ int Video::init(int w, int h){
 
 int Video::post(){
 	SDL_GL_SwapWindow(window);
-	SDL_Delay(1);
+	SDL_Delay(8);
 	
 	GLint err = glGetError();
 	if(err != 0)

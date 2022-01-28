@@ -73,18 +73,14 @@ int main(int argc, char *args[]){
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE , textures[0]);
 	  
 	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, 1024, 768, GL_FALSE);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE , GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE , GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
-	
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textures[0], 0);  
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textures[0], 0);
 
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE , textures[1]);
 	  
 	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_DEPTH_COMPONENT, 1024, 768, GL_FALSE);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE , GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE , GL_TEXTURE_MAG_FILTER, GL_NEAREST);  
 	
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, textures[1], 0);  
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, textures[1], 0);
 
 
 	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -118,7 +114,7 @@ int main(int argc, char *args[]){
 	GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, vid.getProjectionMatrix());
 
-
+    int error = 0;
 	
 	/**/
 		
@@ -475,6 +471,7 @@ int main(int argc, char *args[]){
 		glDrawArrays(GL_TRIANGLES, 0, vaoElements[VAO_FSQUAD]);
 		glEnable(GL_DEPTH_TEST);
 
+        error = max(error, (int)glGetError());
 		
 		vid.post();
 		
@@ -486,7 +483,7 @@ int main(int argc, char *args[]){
 			int dt = SDL_GetTicks()-oldMs;
 			oldMs = SDL_GetTicks();
 			char bf[64];
-			sprintf(bf, "%.2f FPS - %.2f %.2f %.2f", 30000.0f/(float)dt, position[0], position[1], position[2]);
+			sprintf(bf, "%.2f FPS - %.2f %.2f %.2f %d", 30000.0f/(float)dt, position[0], position[1], position[2], error);
 			vid.setWindowTitle(bf);
 		}
 	}

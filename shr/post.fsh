@@ -36,7 +36,7 @@ vec3 normalFromDepth(float depth, vec2 coords){
 }
 #endif
 
-const vec3 kernel[8] = {  
+const vec3 kernel[8] = vec3[](
     normalize( vec3( 1, 1, 1 ) ) * 0.125f,  
     normalize( vec3( -1,-1,-1 ) ) * 0.250f,  
     normalize( vec3( -1,-1, 1 ) ) * 0.375f,  
@@ -45,7 +45,7 @@ const vec3 kernel[8] = {
     normalize( vec3( 1,-1,-1 ) ) * 0.750f,  
     normalize( vec3( 1,-1, 1 ) ) * 0.875f,  
     normalize( vec3( 1, 1,-1 ) ) * 1.000f  
-};  
+);
 
 vec4 textureGet(sampler2DMS samp, vec2 coord){
 	return 0.25*(texelFetch(samp, ivec2(coord*vec2(1024.0,768.0)), 0)+
@@ -59,7 +59,7 @@ vec4 textureGet(sampler2DMS samp, vec2 coord){
 void main(){
 	ivec2 pos = ivec2(texCoord*vec2(1024,768));
 	
-	vec3 random = vec3(rand(texCoord.xy),rand(texCoord.xy+vec2(0.23,0.35)),rand(texCoord.xy)+vec2(0.48,0.56))*2-1;  
+    vec3 random = vec3(rand(texCoord.xy),rand(texCoord.xy+vec2(0.23,0.35)),rand(texCoord.xy)+vec2(0.48,0.56))*2-1;
       
     // Specified in either texels or meters  
     float fRadius = 0.5f;  
