@@ -50,7 +50,7 @@ int Video::init(int w, int h){
 	if(err != 0)
 		std::cerr << "[VID] Error OpenGL en INIT " << err << std::endl; 
 		
-	projectionMatrix = glm::perspective(60.0f * (float)M_PI / 180.0f, (float)w / (float)h, 1.0f, 11500.0f);
+	projectionMatrix = glm::perspective(60.0f * (float)M_PI / 180.0f, (float)w / (float)h, 1.0f, 21500.0f);
 		
 	return 0;
 }
